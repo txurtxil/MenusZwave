@@ -84,7 +84,6 @@ def button(number):
          pygame.quit()
          subprocess.call("/usr/bin/sudo -u pi /home/pi/pitftmenu/zwave/salon1off.sh", shell=True)
          os.execv(__file__, sys.argv)
-
     if number == 5:
         # next page
         pygame.quit()
@@ -92,7 +91,12 @@ def button(number):
 	page=os.environ["MENUDIR"] + "menu_02.py"
 	os.execvp("python", ["python", page])
         sys.exit()
-
+    if number == 6:
+       # next page
+        pygame.quit()
+        page=os.environ["MENUDIR"] + "menu_02.py"
+        os.execvp("python", ["python", page])
+        sys.exit()
 
 
 # colors    R    G    B
