@@ -1,14 +1,15 @@
 #!/usr/bin/env python
-import sys, os, subprocess, time, pygame
+import sys, os, time, subprocess, commands, pygame
 from pygame.locals import *
 from subprocess import *
-os.environ["SDL_FBDEV"] = "/dev/fb1"
-os.environ["SDL_MOUSEDEV"] = "/dev/input/touchscreen"
+os.environ["SDL_FBDEV"] = "/dev/fb0"
+os.environ["SDL_MOUSEDEV"] = "/dev/input/event0"
 os.environ["SDL_MOUSEDRV"] = "TSLIB"
 
 # Initialize pygame modules individually (to avoid ALSA errors) and hide mouse
 pygame.font.init()
 pygame.display.init()
+
 pygame.mouse.set_visible(0)
 
 # define function for printing text in a specific place with a specific width and height with a specific colour and border
@@ -33,17 +34,17 @@ def on_touch():
     touch_pos = (pygame.mouse.get_pos() [0], pygame.mouse.get_pos() [1])
     #  x_min                 x_max   y_min                y_max
     # button 1 event
-##    if 30 <= touch_pos[0] <= 240 and 105 <= touch_pos[1] <=160:
-##            button(1)
+    if 30 <= touch_pos[0] <= 240 and 105 <= touch_pos[1] <=160:
+            button(1)
     # button 2 event
-##    if 260 <= touch_pos[0] <= 470 and 105 <= touch_pos[1] <=160:
-##           button(2)
+    if 260 <= touch_pos[0] <= 470 and 105 <= touch_pos[1] <=160:
+            button(2)
     # button 3 event
-##    if 30 <= touch_pos[0] <= 240 and 180 <= touch_pos[1] <=235:
-##            button(3)
+    if 30 <= touch_pos[0] <= 240 and 180 <= touch_pos[1] <=235:
+            button(3)
     # button 4 event
-##    if 260 <= touch_pos[0] <= 470 and 180 <= touch_pos[1] <=235:
-##            button(4)
+    if 260 <= touch_pos[0] <= 470 and 180 <= touch_pos[1] <=235:
+            button(4)
     # button 5 event
     if 30 <= touch_pos[0] <= 240 and 255 <= touch_pos[1] <=310:
             button(5)
@@ -51,50 +52,47 @@ def on_touch():
     if 260 <= touch_pos[0] <= 470 and 255 <= touch_pos[1] <=310:
             button(6)
 
-# Get time and date
-
-def get_temp():
-    command = "vcgencmd measure_temp"
-    process = Popen(command.split(), stdout=PIPE)
-    output = process.communicate()[0]
-    temp = 'Temp: ' + output[5:-1]
-    return temp
-
-def get_clock():
-    command = "vcgencmd measure_clock arm"
-    process = Popen(command.split(), stdout=PIPE)
-    output = process.communicate()[0]
-    clock = output.split("=")
-    clock = int(clock[1][:-1]) / 1024 /1024
-    clock = 'Clock: ' + str(clock) + "MHz"
-    return clock
-
-def get_volts():
-    command = "vcgencmd measure_volts"
-    process = Popen(command.split(), stdout=PIPE)
-    output = process.communicate()[0]
-    volts = 'Core:   ' + output[5:-1]
-    return volts
-
 def run_cmd(cmd):
     process = Popen(cmd.split(), stdout=PIPE)
     output = process.communicate()[0]
     return output
 
+
 # Define each button press action
 def button(number):
-    if number == 5:
-        # Previous page
+    if number == 1:
+        # X TFT
         pygame.quit()
-        page=os.environ["MENUDIR"] + "menu_kali-3.py"
+        ## Requires "Anybody" in dpkg-reconfigure x11-common if we have scrolled pages previously
+        run_cmd("/usr/bin/sudo -u pi FRAMEBUFFER=/dev/fb1 startx")
+        os.execv(__file__, sys.argv)        
+
+    if number == 2:
+        # Pagina zwave
+        pygame.quit()
+        ## Requires "Anybody" in dpkg-reconfigure x11-common if we have scrolled pages previously
+        page=os.environ["MENUDIR"] + "zwave.py"
         os.execvp("python", ["python", page])
+        sys.exit()        
+    if number == 3:
+        # encender luz salon
+         pygame.quit()
+         subprocess.call("/usr/bin/sudo -u pi /home/pi/pitftmenu/zwave/salon1on.sh", shell=True)
+         os.execv(__file__, sys.argv)
+    if number == 4:
+        # apagar luz salon
+         pygame.quit()
+         subprocess.call("/usr/bin/sudo -u pi /home/pi/pitftmenu/zwave/salon1off.sh", shell=True)
+         os.execv(__file__, sys.argv)
+
+    if number == 5:
+        # next page
+        pygame.quit()
+        ##startx only works when we don't use subprocess here, don't know why
+	page=os.environ["MENUDIR"] + "menu_02.py"
+	os.execvp("python", ["python", page])
         sys.exit()
 
-
-    if number == 6:
-        # Refresh
-        pygame.quit()
-	os.execv(__file__, sys.argv)
 
 
 # colors    R    G    B
@@ -113,14 +111,15 @@ orange   = (255, 127,   0)
 tron_ora = (255, 202,   0)
 
 # Tron theme orange
-##tron_regular = tron_ora
-##tron_light = tron_yel
-##tron_inverse = tron_whi
+tron_regular = tron_ora
+tron_light   = tron_yel
+tron_inverse = tron_whi
 
 # Tron theme blue
-tron_regular = tron_blu
-tron_light = tron_whi
-tron_inverse = tron_yel
+##tron_regular = tron_blu
+##tron_light   = tron_whi
+##tron_inverse = tron_yel 
+
 # Set up the base menu you can customize your menu with the colors above
 
 #set size of the screen
@@ -134,21 +133,20 @@ screen.fill(black)
 pygame.draw.rect(screen, tron_regular, (0,0,479,319),8)
 pygame.draw.rect(screen, tron_light, (2,2,479-4,319-4),2)
 
+pi_hostname = run_cmd("hostname")
+pi_hostname = "  " + pi_hostname[:-1]
 # Buttons and labels
 # First Row Label
-make_label(get_temp(), 32, 30, 48, tron_inverse)
-
-# Second Row buttons 1 and 2
-make_label(get_clock(), 32, 105, 48, tron_inverse)
-## make_button("     Kismet", 30, 105, 55, 210, tron_light)
-## make_button(" SDR-Scanner", 260, 105, 55, 210, tron_light)
-# Third Row buttons 3 and 4
-make_label(get_volts(), 32, 180, 48, tron_inverse)
-## make_button("   Shutdown", 30, 180, 55, 210, tron_light)
-## make_button("      Reboot", 260, 180, 55, 210, tron_light)
+make_label(pi_hostname, 32, 30, 48, tron_inverse)
+# Second Row buttons 3 and 4
+make_button("    X on TFT", 30, 105, 55, 210, tron_light)
+make_button("    SWZwave", 260, 105, 55, 210, tron_light)
+# Third Row buttons 5 and 6
+make_button("    Salon on", 30, 180, 55, 210, tron_light)
+make_button("    Salon off", 260, 180, 55, 210, tron_light)
 # Fourth Row Buttons
-make_button("         <<<", 30, 255, 55, 210, tron_light)
-make_button("     Refresh", 260, 255, 55, 210, tron_light)
+make_button("   Screen Off", 30, 255, 55, 210, tron_light)
+make_button("          >>>", 260, 255, 55, 210, tron_light)
 
 
 #While loop to manage touch screen inputs

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, subprocess, time, pygame, socket
+import sys, os, pygame, subprocess, commands, time, socket
 from pygame.locals import *
 from subprocess import *
 os.environ["SDL_FBDEV"] = "/dev/fb1"
@@ -76,51 +76,82 @@ def shutdown():
     output = process.communicate()[0]
     return output
 
-def get_temp():
-    command = "vcgencmd measure_temp"
-    process = Popen(command.split(), stdout=PIPE)
-    output = process.communicate()[0]
-    return output
+def get_date():
+    d = time.strftime("%a, %d %b %Y  %H:%M:%S", time.localtime())
+    return d
 
 def run_cmd(cmd):
     process = Popen(cmd.split(), stdout=PIPE)
     output = process.communicate()[0]
     return output
 
+def check_service(srvc):
+    try:
+        check = "/usr/sbin/service " + srvc + " status"
+	status = run_cmd(check)
+        if ("is running" in status) or ("active (running)") in status:
+            return True
+        else:
+            return False
+    except:
+        return False
+
+def toggle_service(srvc):
+    check = "/usr/sbin/service " + srvc + " status"
+    start = "/usr/sbin/service " + srvc + " start"
+    stop = "/usr/sbin/service " + srvc + " stop"
+    status = run_cmd(check)
+    if ("is running" in status) or ("active (running)") in status:
+        run_cmd(stop)
+        return False
+    else:
+	run_cmd(start)
+        return True
+
+def check_vnc():
+    if 'vnc :1' in commands.getoutput('/bin/ps -ef'):
+        return True
+    else:
+        return False
+
 # Define each button press action
 def button(number):
     if number == 1:
-        # SW02 on
-         pygame.quit()
-         subprocess.call("/usr/bin/sudo -u pi /home/pi/pitftmenu/sw2on.sh", shell=True)
-         os.execv(__file__, sys.argv)
+        # Apache
+	if toggle_service("apache2"):
+	    make_button(" WWW Server", 30, 105, 55, 210, green)
+	else:
+	    make_button(" WWW Server", 30, 105, 55, 210, tron_light)
+	return
 
     if number == 2:
-        # SW02 off
-         pygame.quit()
-         subprocess.call("/usr/bin/sudo -u pi /home/pi/pitftmenu/sw2off.sh", shell=True)
-         os.execv(__file__, sys.argv)
+        # Pure-ftpd
+	if toggle_service("pure-ftpd"):
+	    make_button("   FTP Server", 260, 105, 55, 210, green)
+	else:
+	    make_button("   FTP Server", 260, 105, 55, 210, tron_light)
+	return
+
     if number == 3:
-        # shutdown
-         pygame.quit()
-         shutdown()
-         sys.exit()
+        # VNC Server
+        if check_vnc():
+            run_cmd("/usr/bin/sudo -u pi /usr/bin/vncserver -kill :1")
+            make_button("  VNC-Server",  30, 180, 55, 210, tron_light)
+        else:
+            run_cmd("/usr/bin/sudo -u pi /usr/bin/vncserver :1")
+            make_button("  VNC-Server",  30, 180, 55, 210, green)
+        return
 
     if number == 4:
-        # reboot
-         screen.fill(black)
-         font=pygame.font.Font(None,72)
-         label=font.render("Rebooting. .", 1, (white))
-         screen.blit(label,(40,120))
-         pygame.display.flip()
-         pygame.quit()
-         restart()
-         sys.exit()
+        # msfconsole
+        pygame.quit()
+        call("/usr/bin/msfconsole", shell=True)
+	os.execv(__file__, sys.argv)
 
     if number == 5:
         # Previous page
         pygame.quit()
-        page=os.environ["MENUDIR"] + "menu_kali-1.py"
+        page=os.environ["MENUDIR"] + "menu_02.py"
         os.execvp("python", ["python", page])
         sys.exit()
 
@@ -128,7 +159,7 @@ def button(number):
     if number == 6:
         # Next page
         pygame.quit()
-        page=os.environ["MENUDIR"] + "menu_kali-3.py"
+        page=os.environ["MENUDIR"] + "menu_04.py"
         os.execvp("python", ["python", page])
         sys.exit()
 
@@ -150,14 +181,14 @@ orange   = (255, 127,   0)
 tron_ora = (255, 202,   0)
 
 # Tron theme orange
-## tron_regular = tron_ora
-## tron_light = tron_yel
-## tron_inverse = tron_whi
+tron_regular = tron_ora
+tron_light = tron_yel
+tron_inverse = tron_whi
 
 # Tron theme blue
-tron_regular = tron_blu
-tron_light = tron_whi
-tron_inverse = tron_yel
+##tron_regular = tron_blu
+##tron_light = tron_whi
+##tron_inverse = tron_yel
 
 # Set up the base menu you can customize your menu with the colors above
 
@@ -174,13 +205,22 @@ pygame.draw.rect(screen, tron_light, (2,2,479-4,319-4),2)
 
 # Buttons and labels
 # First Row Label
-make_label(get_ip(), 32, 30, 48, tron_inverse)
+make_label(get_date(), 32, 30, 48, tron_inverse)
 # Second Row buttons 1 and 2
-make_button("     SW02 on", 30, 105, 55, 210, tron_light)
-make_button("     SW02 off", 260, 105, 55, 210, tron_light)
+if check_service("apache2"):
+     make_button(" WWW Server", 30, 105, 55, 210, green)
+else:
+     make_button(" WWW Server", 30, 105, 55, 210, tron_light)
+if check_service("pure-ftpd"):
+    make_button("   FTP Server", 260, 105, 55, 210, green)
+else:
+    make_button("   FTP Server", 260, 105, 55, 210, tron_light)
 # Third Row buttons 3 and 4
-make_button("   Shutdown", 30, 180, 55, 210, tron_light)
-make_button("      Reboot", 260, 180, 55, 210, tron_light)
+if check_vnc():
+    make_button("  VNC-Server",  30, 180, 55, 210, green)
+else:
+    make_button("  VNC-Server", 30, 180, 55, 210, tron_light)
+make_button("    Metasploit ", 260, 180, 55, 210, tron_light)
 # Fourth Row Buttons
 make_button("         <<<", 30, 255, 55, 210, tron_light)
 make_button("         >>>", 260, 255, 55, 210, tron_light)
