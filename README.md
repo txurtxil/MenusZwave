@@ -9,5 +9,5 @@ SmartHomeBox: Raspberry pi 3 +tft 3.5 + Domoticz + Zwave
 
 ## Instalation guide:
 
-[surfero.blogspot.com](http://surfero.blogspot.com) 3D printed case for my screen and raspberry pi
+[http://surfero.blogspot.com](http://surfero.blogspot.com) :3D printed case for osoyoo 3.5 tft  screen and raspberry pi 3 + zwave usb + domoticz
 
