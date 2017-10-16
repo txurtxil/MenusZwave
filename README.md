@@ -16,3 +16,4 @@ Forked from https://github.com/garthvh/pitftmenu
 
 3D Box from https://www.thingiverse.com/thing:2471701
 
+Smarthome aut. software from http://www.domoticz.com/
