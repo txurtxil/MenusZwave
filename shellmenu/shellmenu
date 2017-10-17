@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+# This script is used to build OrangePi system
+# Write: surfero75
+# Date:  2017-06-28
+
+whiptail --title "Panel administración SmartHomeBox - surfero75" --msgbox \
+ "Script para administrar smarthomebox, mas información: \
+          http://surfero.blogspot.com" \
+          15 50 0
+
+MENUSTR="Selecciona opcion:"
+
+#El tamano de la ventana viene definido por 20 50 8
+OPTION=$(whiptail --title "Panel administración SmartHomeBox - surfero75" \
+    --menu "$MENUSTR" 20 50 8 --cancel-button Finish --ok-button Select \
+    "0"   "Luces Salon" \
+    "1"   "Interrptores pared" \
+    3>&1 1>&2 2>&3)
+
+#Bucle principal, insertar las llamadas a los scripts
+if [ $OPTION = "0" ]; then
+    # Configure wifI
+       ./salon.sh
+    elif [ $OPTION = "1" ]; then
+       ./interruptores.sh 
+     elif [ $OPTION = "2" ]; then
+        /usr/bin/bash
+
+else
+        echo "Bad Operation"
+fi
+
